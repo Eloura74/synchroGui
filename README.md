@@ -1,102 +1,234 @@
 # 🔄 SynchroGui
 
+<div align="center">
+
 > Une interface graphique moderne pour la synchronisation automatique de fichiers, développée avec Electron, React et Tailwind CSS.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Electron](https://img.shields.io/badge/Electron-2B2E3A?style=flat&logo=electron&logoColor=9FEAF9)](https://www.electronjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
+[📖 Documentation](#-documentation) •
+[🚀 Installation](#-installation) •
+[💡 Utilisation](#-utilisation) •
+[🔧 Configuration](#-configuration) •
+[📝 Notes](#-notes)
 
 ![Interface de SynchroGui](https://via.placeholder.com/800x400?text=SynchroGui+Interface)
 
+</div>
+
+## 📑 Table des Matières
+
+- [✨ Fonctionnalités](#-fonctionnalités)
+- [📦 Prérequis](#-prérequis)
+- [🚀 Installation](#-installation)
+- [⚙️ Configuration](#️-configuration)
+- [💻 Utilisation](#-utilisation)
+- [🔧 Dépannage](#-dépannage)
+- [📝 Notes](#-notes)
+- [🤝 Contribution](#-contribution)
+- [📫 Support](#-support)
+- [📜 License](#-license)
+
 ## ✨ Fonctionnalités
 
+### 🎯 Fonctionnalités Principales
 - 📂 Synchronisation automatique de dossiers
-- 🎯 Interface utilisateur intuitive et moderne
-- ⚡ Performance optimisée
-- 🌈 Design responsive avec Tailwind CSS
-- 🔔 Notifications en temps réel
-- 🎨 Thème moderne et élégant
+- 🔄 Synchronisation en temps réel
+- 📊 Tableau de bord de surveillance
+- 🔔 Système de notifications
+- 📝 Journalisation des activités
+
+### 🎨 Interface Utilisateur
+- 🌈 Design moderne avec Tailwind CSS
+- 🌙 Mode sombre / Mode clair
+- 📱 Interface responsive
+- 🖱️ Navigation intuitive
+- 📊 Visualisation des statuts
+
+## 📦 Prérequis
+
+### Environnement de Développement
+- [Node.js](https://nodejs.org/) (version 14.x ou supérieure)
+- [npm](https://www.npmjs.com/) (version 6.x ou supérieure)
+- [Git](https://git-scm.com/) (version 2.x ou supérieure)
+
+### Dépendances Principales
+```json
+{
+  "dependencies": {
+    "electron": "^28.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0"
+  }
+}
+```
 
 ## 🚀 Installation
 
-### Prérequis
+### 1️⃣ Clonage du Projet
+```bash
+# Clonez le dépôt
+git clone https://github.com/Eloura74/synchroGui.git
 
-- [Node.js](https://nodejs.org/) (version 14 ou supérieure)
-- [npm](https://www.npmjs.com/) (inclus avec Node.js)
-- [Git](https://git-scm.com/) pour le clonage du projet
+# Accédez au répertoire
+cd synchroGui
+```
 
-### Étapes d'installation
+### 2️⃣ Installation des Dépendances
+```bash
+# Installation des packages
+npm install
+```
 
-1. **Clonez le dépôt**
-   ```bash
-   git clone https://github.com/Eloura74/synchroGui.git
-   cd synchroGui
-   ```
+### 3️⃣ Configuration du Projet
+1. Créez un fichier `.env` à partir du modèle `.env.example`
+2. Configurez vos variables d'environnement
 
-2. **Installez les dépendances**
-   ```bash
-   npm install
-   ```
+### 4️⃣ Lancement de l'Application
+```bash
+# Mode développement
+npm run dev
 
-3. **Lancez l'application en mode développement**
-   ```bash
-   npm run dev
-   ```
+# Build de production
+npm run build
+```
 
-4. **Pour créer une version de production**
-   ```bash
-   npm run build
-   ```
+## ⚙️ Configuration
 
-## 🛠️ Technologies utilisées
+### Structure des Fichiers
+```
+synchroGui/
+├── src/
+│   ├── styles/
+│   │   ├── main.css
+│   │   └── tailwind.css
+│   ├── renderer/
+│   │   ├── components/
+│   │   └── App.jsx
+│   └── main.js
+├── .gitignore
+├── package.json
+├── vite.config.js
+└── tailwind.config.js
+```
 
-- [Electron](https://www.electronjs.org/) - Framework pour applications de bureau
-- [React](https://reactjs.org/) - Bibliothèque UI
-- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS utilitaire
-- [Vite](https://vitejs.dev/) - Outil de build moderne
+### Fichiers Ignorés (.gitignore)
+```gitignore
+# Dépendances
+node_modules/
 
-## 📖 Guide d'utilisation
+# Build
+gui-synch-win32-x64/
 
-1. **Démarrage**
-   - Lancez l'application
-   - L'interface principale s'affiche avec la liste des projets
+# Environnement
+.env
+.env.local
 
-2. **Ajout d'un nouveau projet**
-   - Cliquez sur le bouton "+" pour ajouter un nouveau projet
-   - Remplissez les informations requises :
+# Logs
+*.log
+```
+
+## 💻 Utilisation
+
+### 🎯 Interface Principale
+1. **Barre de Navigation**
+   - Menu principal
+   - Bouton de configuration
+   - Statut de connexion
+
+2. **Tableau de Bord**
+   - Liste des projets
+   - État des synchronisations
+   - Statistiques en temps réel
+
+### 📂 Gestion des Projets
+1. **Création d'un Projet**
+   - Cliquez sur "+" pour ajouter
+   - Remplissez les informations :
      - Nom du projet
      - Dossier source
-     - Dossier de destination
+     - Dossier destination
+     - Fréquence de synchronisation
 
-3. **Configuration de la synchronisation**
-   - Sélectionnez un projet dans la liste
-   - Ajustez les paramètres de synchronisation selon vos besoins
-   - Activez la synchronisation automatique si désirée
+2. **Configuration des Synchronisations**
+   - Options de synchronisation
+   - Planification
+   - Filtres de fichiers
 
-4. **Surveillance des synchronisations**
-   - Le tableau de bord affiche l'état de chaque projet
-   - Les notifications vous informent des synchronisations en cours
-   - Consultez les logs pour plus de détails
+### 🔔 Notifications
+- Alertes de synchronisation
+- Erreurs et avertissements
+- Statut des tâches
+
+## 🔧 Dépannage
+
+### Problèmes Courants
+1. **L'application ne démarre pas**
+   - Vérifiez Node.js et npm
+   - Réinstallez les dépendances
+   - Consultez les logs
+
+2. **Erreurs de Synchronisation**
+   - Vérifiez les permissions
+   - Contrôlez l'espace disque
+   - Validez les chemins
+
+### Logs et Diagnostics
+- Emplacement des logs : `./logs/`
+- Niveaux de log : INFO, WARN, ERROR
+- Rotation des logs automatique
+
+## 📝 Notes
+
+### Bonnes Pratiques
+- Sauvegardez avant synchronisation
+- Vérifiez régulièrement les logs
+- Maintenez vos dépendances à jour
+
+### Limitations Connues
+- Taille maximale de fichier : 2GB
+- Maximum 10 projets simultanés
+- Certains types de fichiers exclus
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! N'hésitez pas à :
-
+### Guide de Contribution
 1. Fork le projet
-2. Créer une branche pour votre fonctionnalité
-3. Commiter vos changements
-4. Pousser vers la branche
-5. Ouvrir une Pull Request
+2. Créez votre branche
+3. Commitez vos changements
+4. Poussez vers la branche
+5. Ouvrez une Pull Request
 
-## 📝 License
+### Standards de Code
+- ESLint pour JavaScript/React
+- Prettier pour le formatage
+- Tests unitaires requis
+
+## 📫 Support
+
+### Ressources
+- [Documentation complète](https://github.com/Eloura74/synchroGui/wiki)
+- [FAQ](https://github.com/Eloura74/synchroGui/wiki/FAQ)
+- [Guide de dépannage](https://github.com/Eloura74/synchroGui/wiki/Troubleshooting)
+
+### Contact
+- [Créer une Issue](https://github.com/Eloura74/synchroGui/issues)
+- [Discussions](https://github.com/Eloura74/synchroGui/discussions)
+
+## 📜 License
 
 Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
-## 🙋‍♂️ Support
-
-Si vous rencontrez des problèmes ou avez des questions :
-
-- 📫 Ouvrez une issue sur GitHub
-- 💬 Contactez-nous via [notre page de support](https://github.com/Eloura74/synchroGui/issues)
-
 ---
 
-<p align="center">
-  Développé avec ❤️ par <a href="https://github.com/Eloura74">Eloura74</a>
-</p>
+<div align="center">
+  <sub>Développé avec ❤️ par <a href="https://github.com/Eloura74">Eloura74</a></sub>
+  
+  [![Suivez-moi](https://img.shields.io/github/followers/Eloura74?label=Follow&style=social)](https://github.com/Eloura74)
+</div>
