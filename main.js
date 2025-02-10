@@ -91,6 +91,7 @@ ipcMain.handle("add-project", async (event, { path: projectPath, repo }) => {
       repo,
       name: path.basename(projectPath),
       lastSync: null,
+      currentBranch: null,
     };
 
     return saveProjects([...projects, newProject]);
@@ -111,29 +112,88 @@ ipcMain.handle("remove-project", async (event, projectPath) => {
   }
 });
 
-ipcMain.handle("sync-project", async (event, projectPath) => {
+ipcMain.handle("get-branches", async (event, projectPath) => {
+  try {
+    const git = simpleGit(projectPath);
+    const branchSummary = await git.branch();
+    const branches = Object.keys(branchSummary.branches);
+    return branches;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des branches:", error);
+    throw new Error("Impossible de récupérer les branches: " + error.message);
+  }
+});
+
+ipcMain.handle("create-branch", async (event, { projectPath, branchName }) => {
   try {
     const git = simpleGit(projectPath);
     
+    // Vérifier si la branche existe déjà
+    const branchSummary = await git.branch();
+    if (branchSummary.branches[branchName]) {
+      throw new Error("Cette branche existe déjà");
+    }
+
+    // Créer et basculer sur la nouvelle branche
+    await git.checkoutLocalBranch(branchName);
+    
+    // Mettre à jour le projet avec la branche actuelle
+    const projects = loadProjects();
+    const updatedProjects = projects.map((p) =>
+      p.path === projectPath
+        ? { ...p, currentBranch: branchName }
+        : p
+    );
+    saveProjects(updatedProjects);
+
+    return "Branche créée avec succès";
+  } catch (error) {
+    console.error("Erreur lors de la création de la branche:", error);
+    throw new Error("Impossible de créer la branche: " + error.message);
+  }
+});
+
+ipcMain.handle("sync-project", async (event, { projectPath, branchName }) => {
+  try {
+    const git = simpleGit(projectPath);
+    
+    // Vérifier si la branche existe
+    const branchSummary = await git.branch();
+    if (!branchSummary.branches[branchName]) {
+      throw new Error("La branche spécifiée n'existe pas");
+    }
+
+    // Basculer sur la branche si nécessaire
+    if (branchSummary.current !== branchName) {
+      await git.checkout(branchName);
+    }
+
     // Vérifier les changements locaux
     const status = await git.status();
-    
     if (status.modified.length > 0 || status.not_added.length > 0) {
       await git.add("./*");
       await git.commit("Synchronisation automatique");
     }
     
-    // Pull les changements distants
-    await git.pull("origin", "main");
+    try {
+      // Pull avec gestion des conflits
+      await git.pull("origin", branchName, {"--no-rebase": null});
+    } catch (pullError) {
+      // En cas de conflit, on annule les changements locaux
+      await git.reset(["--hard", "HEAD"]);
+      await git.clean("f", ["-d"]);
+      // Réessayer le pull
+      await git.pull("origin", branchName, {"--no-rebase": null});
+    }
     
-    // Push les changements locaux
-    await git.push("origin", "main");
+    // Push les changements
+    await git.push(["origin", branchName]);
     
     // Mettre à jour la date de dernière synchronisation
     const projects = loadProjects();
     const updatedProjects = projects.map((p) =>
       p.path === projectPath
-        ? { ...p, lastSync: new Date().toISOString() }
+        ? { ...p, lastSync: new Date().toISOString(), currentBranch: branchName }
         : p
     );
     
@@ -142,6 +202,6 @@ ipcMain.handle("sync-project", async (event, projectPath) => {
     return "Synchronisation réussie";
   } catch (error) {
     console.error("Erreur lors de la synchronisation:", error);
-    throw error;
+    throw new Error("Erreur de synchronisation: " + error.message);
   }
 });
