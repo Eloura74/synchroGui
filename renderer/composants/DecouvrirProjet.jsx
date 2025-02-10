@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaDownload, FaCodeBranch, FaSearch, FaFolder } from 'react-icons/fa';
+import { FaDownload, FaCodeBranch, FaSearch, FaFolder, FaTrash } from 'react-icons/fa';
 
 const { ipcRenderer } = window.require("electron");
 
@@ -10,6 +10,7 @@ export const DecouvrirProjet = () => {
   const [error, setError] = useState(null);
   const [selectedPath, setSelectedPath] = useState('');
   const [showCloneDialog, setShowCloneDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
   useEffect(() => {
@@ -46,6 +47,11 @@ export const DecouvrirProjet = () => {
     setShowCloneDialog(true);
   };
 
+  const ouvrirDialogueSuppression = (projet) => {
+    setSelectedProject(projet);
+    setShowDeleteDialog(true);
+  };
+
   const clonerProjet = async () => {
     if (!selectedPath) {
       setError("Veuillez sélectionner un dossier de destination");
@@ -66,6 +72,24 @@ export const DecouvrirProjet = () => {
       await chargerProjetsDisponibles();
     } catch (error) {
       setError("Erreur lors du clonage du projet : " + error.message);
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const supprimerProjet = async () => {
+    try {
+      setLoading(true);
+      await ipcRenderer.invoke("remove-local-project", {
+        path: selectedProject.path,
+        removeFiles: true // Supprimer aussi les fichiers locaux
+      });
+      setShowDeleteDialog(false);
+      setSelectedProject(null);
+      await chargerProjetsDisponibles();
+    } catch (error) {
+      setError("Erreur lors de la suppression du projet : " + error.message);
       console.error(error);
     } finally {
       setLoading(false);
@@ -122,14 +146,26 @@ export const DecouvrirProjet = () => {
                   <span className="text-sm text-gray-500">
                     Mis à jour le {new Date(projet.lastUpdate).toLocaleDateString()}
                   </span>
-                  <button
-                    onClick={() => ouvrirDialogueClone(projet)}
-                    disabled={loading}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
-                  >
-                    <FaDownload />
-                    <span>Cloner</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    {projet.path && (
+                      <button
+                        onClick={() => ouvrirDialogueSuppression(projet)}
+                        disabled={loading}
+                        className="flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                        title="Supprimer localement"
+                      >
+                        <FaTrash />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => ouvrirDialogueClone(projet)}
+                      disabled={loading}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
+                    >
+                      <FaDownload />
+                      <span>Cloner</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -184,6 +220,45 @@ export const DecouvrirProjet = () => {
                   className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg disabled:opacity-50"
                 >
                   {loading ? "Clonage..." : "Cloner"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialogue de suppression */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-gray-900 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-semibold text-gray-100 mb-4">
+              Supprimer {selectedProject?.name}
+            </h3>
+            
+            <div className="space-y-4">
+              <p className="text-gray-400">
+                Voulez-vous vraiment supprimer ce projet de votre PC ? Cette action supprimera tous les fichiers locaux mais n'affectera pas le dépôt distant sur GitHub.
+              </p>
+              <p className="text-sm text-gray-500">
+                Emplacement : {selectedProject?.path}
+              </p>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowDeleteDialog(false);
+                    setSelectedProject(null);
+                  }}
+                  className="px-4 py-2 text-gray-400 hover:text-gray-300"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={supprimerProjet}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg disabled:opacity-50"
+                >
+                  {loading ? "Suppression..." : "Supprimer"}
                 </button>
               </div>
             </div>

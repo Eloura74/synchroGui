@@ -260,3 +260,45 @@ ipcMain.handle("clone-project", async (event, { url, nom, branche, destination }
     throw error;
   }
 });
+
+ipcMain.handle("remove-local-project", async (event, { path: projectPath, removeFiles }) => {
+  try {
+    // Charger la liste des projets
+    const projects = loadProjects();
+    
+    // Supprimer le projet de la liste
+    const updatedProjects = projects.filter(project => project.path !== projectPath);
+    
+    // Si on doit supprimer les fichiers
+    if (removeFiles && fs.existsSync(projectPath)) {
+      try {
+        // Fonction récursive pour supprimer un dossier et son contenu
+        const deleteFolderRecursive = (path) => {
+          if (fs.existsSync(path)) {
+            fs.readdirSync(path).forEach((file) => {
+              const curPath = `${path}/${file}`;
+              if (fs.lstatSync(curPath).isDirectory()) {
+                deleteFolderRecursive(curPath);
+              } else {
+                fs.unlinkSync(curPath);
+              }
+            });
+            fs.rmdirSync(path);
+          }
+        };
+
+        // Supprimer le dossier du projet
+        deleteFolderRecursive(projectPath);
+      } catch (error) {
+        console.error("Erreur lors de la suppression des fichiers:", error);
+        throw new Error("Impossible de supprimer les fichiers du projet. " + error.message);
+      }
+    }
+
+    // Sauvegarder la liste mise à jour
+    return saveProjects(updatedProjects);
+  } catch (error) {
+    console.error("Erreur lors de la suppression du projet:", error);
+    throw error;
+  }
+});
