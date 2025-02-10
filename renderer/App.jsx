@@ -98,57 +98,71 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          Synchronisation GitHub
-        </h1>
-
-        {error && (
-          <Alerte
-            type="erreur"
-            message={error}
-            onFermer={() => setError(null)}
-          />
-        )}
-
-        {notification && (
-          <Alerte
-            type={notification.type}
-            message={notification.message}
-            onFermer={() => setNotification(null)}
-          />
-        )}
-
-        <FormulaireProjet
-          cheminProjet={newProjectPath}
-          setCheminProjet={setNewProjectPath}
-          urlDepot={newRepoUrl}
-          setUrlDepot={setNewRepoUrl}
-          onSubmit={addProject}
-          enChargement={loading}
-        />
-
-        <div className="space-y-4">
-          {loading && (
-            <div className="text-center py-4">
-              <Chargement taille="grand" />
+        {/* En-tête */}
+        <header className="mb-8">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
+              SynchroGui
+            </h1>
+            <div className="flex items-center space-x-4">
+              <span className="px-4 py-2 rounded-full bg-gray-700 text-sm font-medium">
+                {projects.length} Projets
+              </span>
             </div>
+          </div>
+        </header>
+
+        {/* Notifications et Alertes */}
+        <div className="space-y-4 mb-8">
+          {loading && <Chargement />}
+          {error && <Alerte type="erreur" message={error} onClose={() => setError(null)} />}
+          {notification && (
+            <Alerte
+              type={notification.type}
+              message={notification.message}
+              onClose={() => setNotification(null)}
+            />
           )}
-          
+        </div>
+
+        {/* Formulaire d'ajout */}
+        <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8 border border-gray-700">
+          <FormulaireProjet
+            newProjectPath={newProjectPath}
+            setNewProjectPath={setNewProjectPath}
+            newRepoUrl={newRepoUrl}
+            setNewRepoUrl={setNewRepoUrl}
+            onSubmit={addProject}
+            loading={loading}
+          />
+        </div>
+
+        {/* Liste des projets */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
             <ProjectCard
               key={project.path}
               project={project}
-              onRemove={removeProject}
-              onSync={syncProject}
+              onSync={() => syncProject(project.path)}
+              onRemove={() => removeProject(project.path)}
             />
           ))}
           
-          {projects.length === 0 && !loading && (
-            <p className="text-center text-gray-500 py-8">
-              Aucun projet ajouté pour le moment
-            </p>
+          {/* Carte "Ajouter un projet" */}
+          {projects.length === 0 && (
+            <div className="col-span-full">
+              <div className="bg-gray-800 bg-opacity-50 rounded-xl p-8 text-center border-2 border-dashed border-gray-600">
+                <div className="text-gray-400">
+                  <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <h3 className="text-xl font-medium mb-2">Aucun projet</h3>
+                  <p>Commencez par ajouter votre premier projet de synchronisation</p>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
