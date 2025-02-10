@@ -115,6 +115,10 @@ ipcMain.handle("sync-project", async (event, projectPath) => {
   try {
     const git = simpleGit(projectPath);
     
+    // Récupérer la branche actuelle
+    const branchData = await git.branch();
+    const currentBranch = branchData.current || 'main';
+    
     // Vérifier les changements locaux
     const status = await git.status();
     
@@ -124,10 +128,10 @@ ipcMain.handle("sync-project", async (event, projectPath) => {
     }
     
     // Pull les changements distants
-    await git.pull("origin", "main");
+    await git.pull("origin", currentBranch);
     
     // Push les changements locaux
-    await git.push("origin", "main");
+    await git.push("origin", currentBranch);
     
     // Mettre à jour la date de dernière synchronisation
     const projects = loadProjects();
@@ -142,6 +146,45 @@ ipcMain.handle("sync-project", async (event, projectPath) => {
     return "Synchronisation réussie";
   } catch (error) {
     console.error("Erreur lors de la synchronisation:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle("get-branches", async (event, projectPath) => {
+  try {
+    const git = simpleGit(projectPath);
+    const branches = await git.branch();
+    return branches.all;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des branches:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle("create-branch", async (event, { projectPath, branchName }) => {
+  try {
+    const git = simpleGit(projectPath);
+    
+    // Créer la nouvelle branche
+    await git.checkoutLocalBranch(branchName);
+    
+    // Push la nouvelle branche vers GitHub
+    await git.push('origin', branchName, ['--set-upstream']);
+    
+    return "Branche créée avec succès";
+  } catch (error) {
+    console.error("Erreur lors de la création de la branche:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle("switch-branch", async (event, { projectPath, branchName }) => {
+  try {
+    const git = simpleGit(projectPath);
+    await git.checkout(branchName);
+    return "Changement de branche réussi";
+  } catch (error) {
+    console.error("Erreur lors du changement de branche:", error);
     throw error;
   }
 });
