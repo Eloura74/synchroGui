@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
 import fs from "fs";
 import simpleGit from "simple-git";
@@ -185,6 +185,78 @@ ipcMain.handle("switch-branch", async (event, { projectPath, branchName }) => {
     return "Changement de branche réussi";
   } catch (error) {
     console.error("Erreur lors du changement de branche:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle("get-available-projects", async () => {
+  try {
+    // Charger les projets depuis le fichier de configuration
+    const projects = loadProjects();
+    
+    // Transformer les projets pour inclure plus d'informations
+    const availableProjects = projects.map(project => ({
+      id: project.path, // Utiliser le chemin comme identifiant unique
+      name: project.name,
+      description: `Projet synchronisé depuis ${project.path}`,
+      repo: project.repo,
+      branche: project.currentBranch || "main",
+      lastUpdate: project.lastSync || new Date().toISOString(),
+      path: project.path
+    }));
+
+    return availableProjects;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des projets disponibles:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle("select-folder", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: 'Sélectionner le dossier de destination'
+  });
+
+  if (!result.canceled) {
+    return result.filePaths[0];
+  }
+  return null;
+});
+
+ipcMain.handle("clone-project", async (event, { url, nom, branche, destination }) => {
+  try {
+    if (!fs.existsSync(destination)) {
+      fs.mkdirSync(destination, { recursive: true });
+    }
+
+    const git = simpleGit(destination);
+    
+    // Cloner le dépôt
+    await git.clone(url, destination);
+    
+    // Vérifier si la branche existe
+    const branches = await git.branch();
+    const brancheExiste = branches.all.includes(branche) || branches.all.includes(`remotes/origin/${branche}`);
+    
+    // Si la branche existe et n'est pas la branche actuelle
+    if (brancheExiste && branche !== branches.current) {
+      await git.checkout(branche);
+    }
+
+    // Ajouter le projet à la liste des projets
+    const projects = loadProjects();
+    const newProject = {
+      path: destination,
+      repo: url,
+      name: nom,
+      lastSync: new Date().toISOString(),
+      currentBranch: branche || "main"
+    };
+
+    return saveProjects([...projects, newProject]);
+  } catch (error) {
+    console.error("Erreur lors du clonage du projet:", error);
     throw error;
   }
 });

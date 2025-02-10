@@ -232,3 +232,89 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
   
   [![Suivez-moi](https://img.shields.io/github/followers/Eloura74?label=Follow&style=social)](https://github.com/Eloura74)
 </div>
+
+## Installation sur un nouveau PC
+
+1. **Prérequis**
+   - Node.js (version 14 ou supérieure)
+   - Git installé et configuré
+   - npm ou yarn
+
+2. **Cloner le projet**
+
+   ```bash
+   # Cloner le dépôt principal
+   git clone <URL_DU_REPO> synchroGui
+   cd synchroGui
+
+   # Pour une branche spécifique, ajouter l'option -b
+   git clone -b <NOM_BRANCHE> <URL_DU_REPO> synchroGui
+   ```
+
+3. **Installation des dépendances**
+   ```bash
+   npm install
+   # ou
+   yarn install
+   ```
+
+4. **Lancer l'application**
+   ```bash
+   npm run dev
+   # ou
+   yarn dev
+   ```
+
+## Utilisation des branches
+
+1. **Lister les branches disponibles**
+   ```bash
+   git branch -a
+   ```
+
+2. **Changer de branche**
+   ```bash
+   git checkout <NOM_BRANCHE>
+   ```
+
+3. **Créer une nouvelle branche**
+   ```bash
+   git checkout -b <NOUVELLE_BRANCHE>
+   git push -u origin <NOUVELLE_BRANCHE>
+   ```
+
+## Configuration
+
+L'application stocke ses données dans :
+- Windows : `%APPDATA%/synchroGui/`
+- macOS : `~/Library/Application Support/synchroGui/`
+- Linux : `~/.config/synchroGui/`
+
+## Fonctionnalités principales
+
+- Interface graphique pour la gestion Git
+- Synchronisation automatique des projets
+- Gestion des branches
+- Historique des synchronisations
+
+## Problèmes courants
+
+1. **Erreur de dépendances**
+   ```bash
+   # Nettoyer le cache npm
+   npm cache clean --force
+   # Réinstaller les dépendances
+   npm install
+   ```
+
+2. **Conflit de branches**
+   ```bash
+   # Récupérer les dernières modifications
+   git fetch origin
+   # Réinitialiser la branche locale
+   git reset --hard origin/<NOM_BRANCHE>
+   ```
+
+## Support
+
+Pour toute question ou problème, veuillez ouvrir une issue sur le dépôt GitHub.
