@@ -92,11 +92,16 @@ npm install
 
 ### 4️⃣ Lancement de l'Application
 ```bash
-# Mode développement
-npm run dev
+
 
 # Build de production
 npm run build
+
+# icone
+npm i react-icons
+
+# Mode développement
+npm run dev
 ```
 
 ## ⚙️ Configuration
