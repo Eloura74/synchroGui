@@ -111,39 +111,61 @@ ipcMain.handle("remove-project", async (event, projectPath) => {
   }
 });
 
-ipcMain.handle("sync-project", async (event, projectPath) => {
+ipcMain.handle("sync-project", async (event, { projectPath, branchName }) => {
   try {
     const git = simpleGit(projectPath);
     
-    // Récupérer la branche actuelle
-    const branchData = await git.branch();
-    const currentBranch = branchData.current || 'main';
-    
-    // Vérifier les changements locaux
+    // Sauvegarder les modifications locales si nécessaire
     const status = await git.status();
-    
     if (status.modified.length > 0 || status.not_added.length > 0) {
-      await git.add("./*");
-      await git.commit("Synchronisation automatique");
+      await git.add('./*');
+      await git.commit('Sauvegarde automatique avant synchronisation');
     }
+
+    // Récupérer la branche actuelle
+    const currentBranch = (await git.branch()).current;
     
-    // Pull les changements distants
-    await git.pull("origin", currentBranch);
-    
-    // Push les changements locaux
-    await git.push("origin", currentBranch);
-    
-    // Mettre à jour la date de dernière synchronisation
+    if (branchName && branchName !== currentBranch) {
+      // Vérifier si la branche existe localement
+      const localBranches = (await git.branchLocal()).all;
+      const remoteBranches = (await git.branch(['-r'])).all.map(b => b.replace('origin/', ''));
+      
+      if (!localBranches.includes(branchName)) {
+        // Si la branche existe en remote mais pas en local
+        if (remoteBranches.includes(branchName)) {
+          await git.checkout(['-b', branchName, `origin/${branchName}`]);
+        } else {
+          // Créer une nouvelle branche basée sur main
+          await git.checkout(['-b', branchName, 'origin/main']);
+        }
+      } else {
+        // Basculer sur la branche demandée
+        await git.checkout(branchName);
+      }
+    }
+
+    // Pull les changements de la branche actuelle
+    await git.pull('origin', branchName || currentBranch);
+
+    // Mettre à jour la configuration du projet
     const projects = loadProjects();
-    const updatedProjects = projects.map((p) =>
-      p.path === projectPath
-        ? { ...p, lastSync: new Date().toISOString() }
-        : p
-    );
-    
-    saveProjects(updatedProjects);
-    
-    return "Synchronisation réussie";
+    const updatedProjects = projects.map(project => {
+      if (project.path === projectPath) {
+        return {
+          ...project,
+          lastSync: new Date().toISOString(),
+          currentBranch: branchName || currentBranch
+        };
+      }
+      return project;
+    });
+
+    await saveProjects(updatedProjects);
+
+    return {
+      success: true,
+      message: `Synchronisation réussie sur la branche ${branchName || currentBranch}`
+    };
   } catch (error) {
     console.error("Erreur lors de la synchronisation:", error);
     throw error;

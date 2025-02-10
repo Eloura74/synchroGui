@@ -5,11 +5,12 @@ const { ipcRenderer } = window.require("electron");
 
 export const ProjectCard = ({ project, onRemove, onSync }) => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [branches, setBranches] = useState([]);
-  const [selectedBranch, setSelectedBranch] = useState("main");
+  const [selectedBranch, setSelectedBranch] = useState(project.currentBranch || 'main');
+  const [showBranchSelector, setShowBranchSelector] = useState(false);
   const [showNewBranch, setShowNewBranch] = useState(false);
   const [newBranchName, setNewBranchName] = useState("");
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadBranches();
@@ -19,13 +20,29 @@ export const ProjectCard = ({ project, onRemove, onSync }) => {
     try {
       const branchesList = await ipcRenderer.invoke("get-branches", project.path);
       setBranches(branchesList);
-      // Si aucune branche n'est sélectionnée, on prend la première
       if (!selectedBranch && branchesList.length > 0) {
         setSelectedBranch(branchesList[0]);
       }
     } catch (error) {
       setError("Erreur lors du chargement des branches");
       console.error(error);
+    }
+  };
+
+  const handleSync = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await ipcRenderer.invoke('sync-project', { 
+        projectPath: project.path,
+        branchName: selectedBranch
+      });
+      if (onSync) onSync();
+    } catch (error) {
+      setError("Erreur de synchronisation: " + error.message);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +111,13 @@ export const ProjectCard = ({ project, onRemove, onSync }) => {
             {/* Menu d'actions */}
             <div className="flex -space-x-2">
               <button
+                onClick={() => setShowBranchSelector(!showBranchSelector)}
+                className="px-3 py-1 text-sm bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 rounded-lg flex items-center space-x-1"
+              >
+                <FaCodeBranch className="mr-1" />
+                <span>{selectedBranch}</span>
+              </button>
+              <button
                 onClick={() => onSync(project.path)}
                 disabled={loading}
                 className="relative p-2 text-gray-400 hover:text-blue-400 transition-colors group/btn"
@@ -138,39 +162,31 @@ export const ProjectCard = ({ project, onRemove, onSync }) => {
             </div>
           </div>
 
-          {/* Gestion des branches */}
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <label className="text-sm text-gray-400 mb-1 block">
-                Branche actuelle
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedBranch}
-                  onChange={(e) => handleBranchChange(e.target.value)}
-                  disabled={loading}
-                  className="w-full bg-gray-800/30 border border-gray-700/50 rounded-lg py-2 px-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  {branches.map((branch) => (
-                    <option key={branch} value={branch}>
-                      {branch}
-                    </option>
-                  ))}
-                </select>
-                <FaCodeBranch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          {showBranchSelector && (
+            <div className="mt-2 p-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+              <div className="text-sm font-medium text-gray-400 mb-2">
+                Sélectionner une branche pour la synchronisation
+              </div>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {branches.map((branche) => (
+                  <button
+                    key={branche}
+                    onClick={() => {
+                      setSelectedBranch(branche);
+                      setShowBranchSelector(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors ${
+                      branche === selectedBranch
+                        ? 'bg-blue-500/20 text-blue-400'
+                        : 'hover:bg-gray-700/50 text-gray-300'
+                    }`}
+                  >
+                    {branche}
+                  </button>
+                ))}
               </div>
             </div>
-            
-            <button
-              onClick={() => setShowNewBranch(!showNewBranch)}
-              className="relative p-2 text-gray-400 hover:text-blue-400 transition-colors group/btn flex items-center space-x-2"
-              disabled={loading}
-            >
-              <span className="absolute -inset-2 bg-blue-400/10 rounded-full opacity-0 group-hover/btn:opacity-100 transition-opacity"></span>
-              <FaPlus />
-              <span>Nouvelle</span>
-            </button>
-          </div>
+          )}
 
           {/* Formulaire de nouvelle branche */}
           {showNewBranch && (
@@ -191,12 +207,6 @@ export const ProjectCard = ({ project, onRemove, onSync }) => {
                 <span className="absolute -inset-2 bg-blue-400/10 rounded-full opacity-0 group-hover/btn:opacity-100 transition-opacity"></span>
                 Créer
               </button>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-red-400 text-sm animate-fade-in">
-              {error}
             </div>
           )}
 
@@ -222,6 +232,12 @@ export const ProjectCard = ({ project, onRemove, onSync }) => {
               )}
             </div>
           </div>
+
+          {error && (
+            <div className="text-red-400 text-sm animate-fade-in">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </div>
