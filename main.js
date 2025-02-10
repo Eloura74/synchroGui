@@ -77,7 +77,18 @@ ipcMain.handle("add-project", async (event, { path: projectPath, repo }) => {
     if (!isRepo) {
       await git.init();
       await git.addRemote("origin", repo);
+      
+      // Créer la branche main par défaut
+      try {
+        await git.raw(["checkout", "-b", "main"]);
+      } catch (error) {
+        console.log("La branche main existe déjà");
+      }
     }
+
+    // Vérifier les branches disponibles
+    const branchSummary = await git.branch();
+    const defaultBranch = branchSummary.current || "main";
 
     const projects = loadProjects();
     const existingProject = projects.find((p) => p.path === projectPath);
@@ -91,7 +102,7 @@ ipcMain.handle("add-project", async (event, { path: projectPath, repo }) => {
       repo,
       name: path.basename(projectPath),
       lastSync: null,
-      currentBranch: null,
+      currentBranch: defaultBranch,
     };
 
     return saveProjects([...projects, newProject]);
@@ -157,14 +168,29 @@ ipcMain.handle("sync-project", async (event, { projectPath, branchName }) => {
   try {
     const git = simpleGit(projectPath);
     
-    // Vérifier si la branche existe
+    // Vérifier si la branche existe localement
     const branchSummary = await git.branch();
-    if (!branchSummary.branches[branchName]) {
-      throw new Error("La branche spécifiée n'existe pas");
-    }
-
-    // Basculer sur la branche si nécessaire
-    if (branchSummary.current !== branchName) {
+    const localBranches = Object.keys(branchSummary.branches);
+    
+    if (!localBranches.includes(branchName)) {
+      // Si la branche n'existe pas localement, essayer de la créer depuis origin
+      try {
+        await git.fetch("origin");
+        await git.checkout(["-b", branchName, `origin/${branchName}`]);
+      } catch (error) {
+        // Si la branche n'existe pas non plus sur origin, créer une nouvelle branche locale
+        if (!branchName) {
+          branchName = "main";
+        }
+        try {
+          await git.checkout(["-b", branchName]);
+        } catch (checkoutError) {
+          // Si la branche existe déjà, basculer simplement dessus
+          await git.checkout(branchName);
+        }
+      }
+    } else {
+      // La branche existe localement, basculer dessus
       await git.checkout(branchName);
     }
 
@@ -176,18 +202,23 @@ ipcMain.handle("sync-project", async (event, { projectPath, branchName }) => {
     }
     
     try {
-      // Pull avec gestion des conflits
-      await git.pull("origin", branchName, {"--no-rebase": null});
+      // Vérifier si la branche distante existe
+      const remotes = await git.remote(["show", "origin"]);
+      if (remotes.includes(branchName)) {
+        // Pull avec gestion des conflits
+        await git.pull("origin", branchName, {"--no-rebase": null});
+      }
     } catch (pullError) {
-      // En cas de conflit, on annule les changements locaux
-      await git.reset(["--hard", "HEAD"]);
-      await git.clean("f", ["-d"]);
-      // Réessayer le pull
-      await git.pull("origin", branchName, {"--no-rebase": null});
+      console.log("La branche n'existe pas encore sur origin ou erreur de pull:", pullError);
     }
     
-    // Push les changements
-    await git.push(["origin", branchName]);
+    try {
+      // Push la branche vers origin
+      await git.push(["--set-upstream", "origin", branchName]);
+    } catch (pushError) {
+      console.error("Erreur lors du push:", pushError);
+      throw new Error("Impossible de push vers le dépôt distant: " + pushError.message);
+    }
     
     // Mettre à jour la date de dernière synchronisation
     const projects = loadProjects();
